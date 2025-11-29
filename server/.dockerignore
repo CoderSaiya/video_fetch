@@ -1,0 +1,32 @@
+# Build artifacts
+bin/
+obj/
+publish/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+[Tt]mp/
+temp/
+
+# NuGet
+*.nupkg
+.nuget/
+
+# yt-dlp (will be downloaded in Docker)
+yt-dlp
+yt-dlp.exe
