@@ -11,7 +11,8 @@ namespace server.Controllers;
 public class DownloadController : ControllerBase
 {
     private readonly ILogger<DownloadController> _logger;
-    private const string YtDlpPath = "yt-dlp.exe";
+    // Auto-detect yt-dlp binary based on OS (Windows: yt-dlp.exe, Linux/Docker: yt-dlp)
+    private static readonly string YtDlpPath = OperatingSystem.IsWindows() ? "yt-dlp.exe" : "yt-dlp";
 
     public DownloadController(ILogger<DownloadController> logger)
     {

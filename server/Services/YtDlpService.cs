@@ -6,7 +6,8 @@ namespace server.Services;
 
 public class YtDlpService : IYtDlpService
 {
-    private const string YtDlpPath = "yt-dlp.exe"; // Assumes it's in the working directory
+    // Auto-detect yt-dlp binary based on OS (Windows: yt-dlp.exe, Linux/Docker: yt-dlp)
+    private static readonly string YtDlpPath = OperatingSystem.IsWindows() ? "yt-dlp.exe" : "yt-dlp";
 
     public async Task<VideoInfo> GetVideoInfoAsync(string url)
     {
