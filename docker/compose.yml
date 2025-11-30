@@ -1,0 +1,50 @@
+name: video-fetch
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    container_name: video-fetch-api
+    ports:
+      - "5004:8084"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8084
+    volumes:
+      - ../server/logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/swagger"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - video-fetch-network
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: video-fetch-tunnel
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - video-fetch-network
+    environment:
+      - TUNNEL_METRICS=0.0.0.0:3000
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - ./cloudflared:/etc/cloudflared
+
+networks:
+  video-fetch-network:
+    driver: bridge

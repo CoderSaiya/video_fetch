@@ -4,11 +4,17 @@
 
 Deploy the Video Downloader backend API using Docker. Frontend is deployed separately on Vercel.
 
+**Deployment Options:**
+- **Local Development:** Run backend on localhost
+- **Cloud Platforms:** Railway, Google Cloud Run, Azure, etc.
+- **Cloudflare Tunnel:** Expose local backend securely without public IP (FREE!)
+
 ## Prerequisites
 
 - Docker Engine 20.10+
 - 1GB+ available RAM
 - 5GB+ available disk space
+- (Optional) Cloudflare account for tunnel deployment
 
 ## Quick Start
 
@@ -17,10 +23,10 @@ Deploy the Video Downloader backend API using Docker. Frontend is deployed separ
 cd video_fetch
 
 # Build and start backend
-docker-compose up -d
+docker-compose -f docker/compose.yml up -d
 
 # View logs
-docker-compose logs -f
+docker-compose -f docker/compose.yml logs -f
 
 # Access API at http://localhost:8080
 # Swagger UI at http://localhost:8080/swagger
@@ -30,11 +36,32 @@ docker-compose logs -f
 
 ## Architecture
 
+### Standard Deployment
 ```
 Vercel (Frontend)  →  Docker Container (Backend API)
      ↓                        ↓
   Next.js              .NET + yt-dlp
 ```
+
+### With Cloudflare Tunnel (Recommended)
+```
+Vercel Frontend (HTTPS)
+        ↓
+Cloudflare Network (CDN + SSL + DDoS Protection)
+        ↓
+Cloudflare Tunnel (cloudflared container)
+        ↓
+Backend Container (HTTP :8080)
+```
+
+**Benefits of Cloudflare Tunnel:**
+- ✅ No public IP needed
+- ✅ No port forwarding
+- ✅ Automatic HTTPS
+- ✅ DDoS protection
+- ✅ Completely FREE
+
+📖 **Setup Guide:** [CLOUDFLARE_TUNNEL.md](./CLOUDFLARE_TUNNEL.md)
 
 ---
 
@@ -77,7 +104,7 @@ builder.Services.AddCors(options =>
 
 ### Environment Variables
 
-Set in `docker-compose.yml`:
+Set in `docker/compose.yml`:
 
 ```yaml
 environment:
@@ -93,16 +120,16 @@ environment:
 
 ```bash
 # Build and start
-docker-compose up -d
+docker-compose -f docker/compose.yml up -d
 
 # Rebuild
-docker-compose build --no-cache
+docker-compose -f docker/compose.yml build --no-cache
 
 # Restart
-docker-compose restart
+docker-compose -f docker/compose.yml restart
 
 # Stop
-docker-compose down
+docker-compose -f docker/compose.yml down
 ```
 
 ### Manual Docker Build
@@ -124,11 +151,36 @@ docker run -d \
 
 ## Deployment to Production
 
-### Option 1: Docker Hub
+### Option 1: Cloudflare Tunnel (Recommended for Easy Setup)
+
+**Best for:** Quick deployment without server configuration, free hosting, development/testing
+
+```bash
+# 1. Create .env file
+cd docker
+cp .env.example .env
+
+# 2. Add your Cloudflare tunnel token to .env
+# Get token from: https://one.dash.cloudflare.com/
+
+# 3. Start services
+docker-compose -f compose.yml up -d
+
+# 4. Configure public hostname in Cloudflare Dashboard
+# Point to: backend:8080
+```
+
+**Your API is now live at:** `https://api.yourdomain.com`
+
+📖 **Full Guide:** [CLOUDFLARE_TUNNEL.md](./CLOUDFLARE_TUNNEL.md)
+
+---
+
+### Option 2: Docker Hub
 
 ```bash
 # Build
-docker-compose build
+docker-compose -f docker/compose.yml build
 
 # Tag
 docker tag video-downloader-api codersaiya/video-downloader-api:latest
@@ -143,7 +195,7 @@ docker pull codersaiya/video-downloader-api:latest
 docker run -d -p 8080:8080 codersaiya/video-downloader-api:latest
 ```
 
-### Option 2: Cloud Platforms
+### Option 3: Cloud Platforms
 
 #### Railway
 1. Connect GitHub repository
@@ -193,7 +245,7 @@ builder.WithOrigins("https://your-app.vercel.app")
 
 ```bash
 # Backend
-docker-compose up -d --build
+docker-compose -f docker/compose.yml up -d --build
 
 # Frontend (automatic on Vercel after env change)
 ```
@@ -206,13 +258,13 @@ docker-compose up -d --build
 
 ```bash
 # Real-time logs
-docker-compose logs -f
+docker-compose -f docker/compose.yml logs -f
 
 # Last 100 lines
-docker-compose logs --tail=100
+docker-compose -f docker/compose.yml logs --tail=100
 
 # Specific time
-docker-compose logs --since 30m
+docker-compose -f docker/compose.yml logs --since 30m
 ```
 
 ### Container Health
@@ -236,19 +288,19 @@ docker stats video-downloader-api
 
 ```bash
 # Check logs
-docker-compose logs backend
+docker-compose -f docker/compose.yml logs backend
 
 # Verify image
 docker images | grep video-downloader
 
 # Rebuild
-docker-compose build --no-cache
+docker-compose -f docker/compose.yml build --no-cache
 ```
 
 ### Port Already in Use
 
 ```bash
-# Change port in docker-compose.yml
+# Change port in docker/compose.yml
 ports:
   - "8081:8080"
 ```
@@ -257,7 +309,7 @@ ports:
 
 ```bash
 # Enter container
-docker-compose exec backend /bin/bash
+docker-compose -f docker/compose.yml exec backend /bin/bash
 
 # Test yt-dlp
 yt-dlp --version
@@ -284,14 +336,14 @@ builder.WithOrigins("https://your-app.vercel.app")
 git pull origin main
 
 # Rebuild and restart
-docker-compose up -d --build
+docker-compose -f docker/compose.yml up -d --build
 ```
 
 ### Clean Up
 
 ```bash
 # Stop container
-docker-compose down
+docker-compose -f docker/compose.yml down
 
 # Remove images
 docker rmi video-downloader-api
@@ -340,7 +392,7 @@ logging:
 ```bash
 # Update base image
 docker pull mcr.microsoft.com/dotnet/aspnet:8.0
-docker-compose build --no-cache
+docker-compose -f docker/compose.yml build --no-cache
 ```
 
 3. **Scan for Vulnerabilities**
@@ -354,7 +406,7 @@ docker scan video-downloader-api
 
 ```bash
 # 1. Build backend Docker image
-docker-compose build
+docker-compose -f docker/compose.yml build
 
 # 2. Push to Docker Hub
 docker tag video-downloader-api codersaiya/video-downloader-api:latest
